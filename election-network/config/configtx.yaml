@@ -1,0 +1,158 @@
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/election.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer.election.com:7050
+  - &Eci
+    Name: EciMSP
+    ID: EciMSP
+    MSPDir: ../organizations/peerOrganizations/eci.election.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('EciMSP.admin', 'EciMSP.peer', 'EciMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('EciMSP.admin', 'EciMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('EciMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('EciMSP.peer')"
+  - &Uidai
+    Name: UidaiMSP
+    ID: UidaiMSP
+    MSPDir: ../organizations/peerOrganizations/Uidai.election.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('UidaiMSP.admin', 'UidaiMSP.peer', 'UidaiMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('UidaiMSP.admin', 'UidaiMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('UidaiMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('UidaiMSP.peer')"
+
+  - &Party
+    Name: PartyMSP
+    ID: PartyMSP
+    MSPDir: ../organizations/peerOrganizations/Party.election.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('PartyMSP.admin', 'PartyMSP.peer', 'PartyMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('PartyMSP.admin', 'PartyMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('PartyMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('PartyMSP.peer')"
+
+Capabilities:  
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_5: true
+    
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  Addresses:
+    - orderer.election.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  ThreeOrgsChannel:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      OrdererType: etcdraft
+      EtcdRaft:
+        Consenters:
+          - Host: orderer.election.com
+            Port: 7050
+            ClientTLSCert: ../organizations/ordererOrganizations/election.com/orderers/orderer.election.com/tls/server.crt
+            ServerTLSCert: ../organizations/ordererOrganizations/election.com/orderers/orderer.election.com/tls/server.crt
+      Organizations:
+        - *OrdererOrg
+      Capabilities: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *Eci
+        - *Uidai
+        - *Party
+      Capabilities: *ApplicationCapabilities

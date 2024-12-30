@@ -17,6 +17,7 @@ to stop the network
 ```bash
 chmod +x stopNetwork.sh
 ./stopNetwork.sh
+
 ```
 
 To start the client (this will start the client on gin server to intract with the chain code)
